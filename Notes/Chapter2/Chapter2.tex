@@ -1,0 +1,263 @@
+\documentclass{article}
+
+\usepackage{amsmath} % For mathematical symbols and equations
+\usepackage{amssymb} % For additional mathematical symbols
+\usepackage{graphicx} % For including images
+\usepackage{hyperref} % For hyperlinks
+\usepackage{bookmark} % For correct outlines
+\usepackage[margin=2.5cm, top=1.5cm]{geometry} % Set the margin size to 1cm
+\usepackage{tcolorbox}
+
+\title{Chapter 2}
+\author{David Ding}
+
+\begin{document}
+
+\maketitle
+
+\section{Problem Introduced}
+
+Suppose we have k-bandits, each of them has a hidden value behinds it. We can only choose one bandit each time 
+and get a reward from the bandit we choose. The goal is to quickly converges to the bandit that has the highest value.
+
+We denote the action that we choose at time t as $A_t$, and the reward we get from the action as $R_t$. 
+The value for this arbitary step is $q_*(A_t)$, and the expected value that the bandit $a$ is chosen is
+$$q_*(a) = \mathrm{E}[R_t|A_t=a]$$
+
+The solution to this problem is to use the greedy algorithm, which always choose the bandit that has the highest value. 
+However, this algorithm will not give the best choice when the observation at initial conditions haven't done enough to 
+figure out the actual value of each bandit. 
+This raise the most important problem in this chapter, the \textbf{exploration-exploitation} diplomacy.Should we continune to 
+update the value estimation at time $t$ denotes as $Q_t(a)$, that is to randomly choose a bandit for the update 
+of its value, or just stick to our past $t-1$'s experience and choose the bandit that is estimated to be the best at that time.
+And this chapter give out some tricks or special solution to tackle with this problem.
+
+\begin{itemize}
+    \item \textbf{$\epsilon$ - greedy algorithm}
+    
+    The $\epsilon$ - greedy algorithm helps to add some \textbf{randomness} to the greedy algorithm. The higher the $\epsilon$ is,
+    the more easily it will reach the optimal bandit estimate, but the randomness influence its optiamal rate at the 
+    end of the training, letting the expected correctness to be lower than others. While using a small $\epsilon$ would 
+    have completely different result. So sometimes for stationary condition, the \textbf{variable $\epsilon$} could be 
+    introduced in order to reduce the effect of the randomness.
+    \item \textbf{Optimistic initial values}
+    \begin{itemize}
+        \item \textsf{Large Positive Initial Value}
+        
+        By setting the initial value of each bandit to \textbf{higher} than the possible value of bandits, every exploration will
+        definitely reduce the estimate of the bandit, "upsetting" the selection for this bandit and turn to other less 
+        frequently selected bandits where the recent value is more closely related to the intial value.
+        \item \textsf{An Unbiased Constant-Stepsize Trick}
+        
+        As we can see, the setting of our initial value directly influence our estimate of the value for each bandit.
+        So  setting the $\beta_t \in [0,1]$(the percentage of how the new observed value would influence the update of the estimate 
+        of the bandit at time $t$) to be a dereasing value(from 1 to $\alpha$) would be a good choice. This help to prevent the
+        \textbf{Initial Bias} for the estimation while keeps the property of expotential recency descendent of weights.
+    \end{itemize}
+    \item \textbf{Upper confidence bound}
+    
+    The Upper confidence bound(UCB) is a method that take the account of uncertainty from the lack of enough
+    observations and the compensation of the more explore due to the increase of time. By adding a term to 
+    the estimated action value to reach the \textbf{plausible upper bound}, exploration would be encouraged.
+    \item \textbf{Gradient bandit algorithm}
+    
+    This approach stands somewhat further than the methods discussed in this chapter, that it doesn't relied
+    on the estimation of action value, instead, a numerical \textbf{preference} denotes as $H_t(a) \in \mathbb{R}$
+    is introduced, and we focus on the relative preference over another action that really matters in our 
+    decision making. In order to transform this kind of preference into our choice from the bandits, the 
+    \textsl{Softmax} Method is used for convenience. 
+
+    \item \textbf{Associative search}
+    
+    Associative search is actually a more complicated aspect that takes into account of different situation,
+    in which the best bandit might be different meaning a variable policy. Thus the agent should be able 
+    to sense the environment and make the right decision.
+
+\end{itemize}
+
+\section{The $\epsilon$ - greedy algorithm}
+\subsection{Action-Value Methods} The Action-Value method is the basis of the $\epsilon$ - greedy method. 
+As we know, one of the key step in a reinforcement learning is to identify the estimated value for a certain action.
+The Action-Value method is to estimate the value of each action by the average of the rewards that we get from this action.
+\begin{equation}
+    Q_t(a) =  \dfrac{\sum_{i=1}^{t-1}\mathrm{1}_{A_i=a}\cdot R_i}{\sum_{i=1}^{t-1}\mathrm{1}_{A_i=a}}
+\end{equation}
+Then the choice of bandit at time $t$ is $A_t = \arg\max_a Q_t(a)$.
+
+For the ease of more efficient computation and the logic of updating of the estimate rather than calculating the average
+again and again every time, we would like to use the \textbf{Incremental Method}.
+\begin{equation}
+    \begin{aligned}
+        Q_{n+1} &= \dfrac{1}{n}\sum_{i=1}^{n}R_i \\
+                &= \dfrac{1}{n}R_n + \dfrac{1}{n}\sum_{i=1}^{n-1}R_i \\
+                &= \dfrac{1}{n}R_n + \dfrac{n-1}{n}Q_n \\
+                &= Q_n + \dfrac{1}{n}[R_n-Q_n]
+    \end{aligned}
+\end{equation}
+we denote the stepsize variable as $\alpha(t)$, in the sample mean case, $\alpha_t = \frac{1}{n}$.
+
+\subsection{Constant Stepsize}
+For the need to set the stepsize larger in the long run, we could use a constant stepsize that ensure the update is 
+equal no matter $t$ is early or not. The update formula is:
+$$Q_{n+1} = Q_n + \alpha[R_n - Q_n]$$
+Writing this formula a little more, we could derive the relationship with each observation:
+\begin{equation}
+    \begin{aligned}
+        Q_{n+1} &= Q_n + \alpha[R_n - Q_n]\\
+                &= \alpha R_n + (1-\alpha)Q_n\\
+                &= \alpha R_n + (1-\alpha)[(1-\alpha)Q_{n-1} + \alpha R_{n-1}]\\
+                &= (1-\alpha)^n Q_1 + \sum_{i=1}^n \alpha(1-\alpha)^{n-i}R_i
+    \end{aligned}
+\end{equation}
+By adding the weights over $Q_1$ and $R_1$ together, it's easy to show that the sum of the weights is $1$[hint: adding 
+the first term and the second sum in pairs]
+
+When the stepsize is not constant, then the stepsize is variable with time $t$,
+then we could rewrite the formula into:
+\begin{equation}
+    \begin{aligned}
+    Q_{n+1} &= \alpha_n R_n + [1-\alpha_n]Q_n \\
+            &= \prod_{i=1}^n (1-\alpha_i)Q_{1} + \sum_{i=1}^n \alpha_i\prod_{j=i+1}^n (1-\alpha_j)R_i
+    \end{aligned}    
+\end{equation}
+\subsection{Algorithm}
+\begin{tcolorbox}[colback=white, colframe=black, title=A simple bandit algorithm]
+    \textbf{Initialize}, for $a = 1$ to $k$: \\
+    \hspace*{0.5cm} $Q(a) \leftarrow 0$ \\
+    \hspace*{0.5cm} $N(a) \leftarrow 0$ \\
+    \\
+    \textbf{Loop}: \\
+    \hspace*{0.5cm} $A \leftarrow \begin{cases} 
+    \arg\max_{a} Q(a) & \text{with probability } 1 - \epsilon \text{ (breaking ties randomly)} \\
+    \text{random action} & \text{with probability } \epsilon 
+    \end{cases}$ \\
+    \hspace*{0.5cm} $R \leftarrow \text{bandit}(A)$ \\
+    \hspace*{0.5cm} $N(A) \leftarrow N(A) + 1$ \\
+    \hspace*{0.5cm} $Q(A) \leftarrow Q(A) + \frac{1}{N(A)} \left[R - Q(A)\right]$
+    \end{tcolorbox}
+
+\section{Optimistic initial values}
+\subsection{Large Positive Initial Value}
+\begin{itemize}
+    \item Setting a high initial action value encourages exploration by making all bandits initially attractive.
+    \item Not suitable for nonstationary problems, as the initial value won't drive the exploration permanently.
+\end{itemize}
+\subsection{An Unbiased Constant-Stepsize Trick}
+This trick combines the advantages of the sample-average methods that it will not produce a \textbf{Initial Bias} and 
+the constant stepsize methods that it gives \textbf{more weight} on newly observed rewards for certain actions. 
+
+The stepsize is defined as: 
+\begin{equation}
+    \beta_n = \dfrac{\alpha}{\overline{o}_n}
+\end{equation}
+Where the $\alpha$ is the stepsize we want in the long turn, and by setting the $\overline{o}_n$ to increase over time,
+we will get a big$\alpha$ when $t$ is small, and the $\beta_1$ equals to $1$, which means the initial value is completely
+disgarded and the inital update of estimates will focus more on recency. The update of $\overline{o}_n$ is defined as:
+
+\begin{equation}
+    \overline{o}_n = \overline{o}_{n-1} + \alpha[1-\overline{o}_{n-1}]
+\end{equation}
+\section{Upper confidence bound}
+The UCB upper confidence bound is simple in practice when dealing with our multi-bandit problem, that the 
+formula could be easily written as:
+\begin{equation}
+    UCB_t(a) = R_t(a) + c\sqrt{\frac{\ln t}{N_t(a)}}
+\end{equation}
+Where $c$ is the constant that balance the exploration and exploitation trade-off, $\sqrt{\ln T}$ encourage 
+explorations along the increasing time, and $\sqrt{\frac{1}{N_t(a)}}$ would prompt unexplored bandits to have
+larger potential. 
+\section{Gradient bandit algorithm}
+\subsection{Gradient Method Introduced}
+As we mentioned in the first section, we would like to adjust the numerical preference on each of the bandit
+in order to get the largest expected rewards. The preference for each of the bandit at time $t$ is denoted as $H_t(a)$,
+and we transform the preference for a certain bandit into a absolute probability of choosing it considered 
+the relative preference with the other bandits, the probability is denoted as $\pi_t(a)$, with the expression:
+\begin{equation}
+    \pi_t(a) = \dfrac{\exp^{H_t(a)}}{\sum_x \exp^{H_t(x)}}
+\end{equation}
+Using this prior estimated probability, we randomly choose one bandit from this distribution, and get the
+reward $R_t$, and we also calculate the average reward $\overline{R_t}$ from time $1-t, [R_{1}=\overline{R_1}]$.
+
+As we randomly sample a action $A_t$ according to the preference at time $t$, this serves as a \textbf{Stochastic
+Gradient Descendent}, aka the expectation of every update is exactly the "Gradient descendent"\footnote{Here it
+actually is not descendent but to follow the direction of the gradient in order to maximize the expectation of
+rewards $E[R_t]$.} of the Rewards. 
+The update formula when we choose Action $A_t$ with rewards $R_t$ and the average rewards $\overline{R_t}$ is then:
+\begin{equation}\label{eq:UpdateEq}
+    \left\{\begin{aligned}
+    &H_t(A_t) = H_t(A_t) + \alpha(R_t - \overline{R_t})(1-\pi_t(A_t)) ~~ \text{for}~ a ~= ~A_t\\
+    &H_t(a) = H_t(a) - \alpha(R_t - \overline{R_t})\pi_t(A_t)~~ \text{for}~ a ~\neq ~A_t
+    \end{aligned}\right.
+\end{equation}
+Where the $\alpha$ is the rate of learning, while $\overline{R_t}$ serve as a baseline. 
+\subsection{Mathmetical Model for Gradient Bandit Method}
+The general idea for the gradient method is to obtain the highest expectation of rewards $E[R_t]$ under 
+parameters $H_t(a)$. By using the partial derivative of the expectation value towards different $H_t(a)$, 
+then it writes:
+\begin{equation}
+    H_{t+1}(a) = H_t(a) + \alpha \frac{\partial E[R_t]}{\partial H_t(a)}
+\end{equation}
+This formula is not pratical yet as we couldn't calculate the exact partial derivative for a expectational
+value, where the $E[R_t]$ is:
+\begin{equation}
+    E[R_t] = \sum_x \pi_t(x)q^*(x)
+\end{equation}
+Substituting into the former formula, and use the property that $\sum_x \dfrac{\partial \pi_x}{\partial H_t(a)}=0$, 
+we get:
+\begin{equation}
+    \frac{\partial E[R_t]}{\partial H_t(a)} = \sum_x (q^*(x) - B_t)\frac{\partial \pi_t(x)}{\partial H_t(a)}
+\end{equation}
+Where the $B_t$ is a action-invariant value that influence the absolute change of each action value while
+does not change the \textbf{relative}update in $H_t(a)$. For faster convergence, we choose this $B_t$ as 
+$\overline{R_t}$
+\begin{equation}
+    \begin{aligned}
+    \sum_x (q^*(x) - \overline{R_t})\frac{\partial \pi_t(x)}{\partial H_t(a)} &=  \sum_x \pi_t(x)(q^*(x) 
+    - \overline{R_t})\frac{\partial \pi_t(x)}{\partial H_t(a)}\cdot \frac{1}{\pi_t(x)} \\
+    &=E[(R_t - \overline{R_t})\frac{\partial \pi_t(A_t)}{H_t(a)}\cdot\frac{1}{\pi_t(A_t)}]
+    \end{aligned}
+\end{equation}
+$A_t$ is a random variable that is chosen according to the probability distribution of $\pi_t$, and the 
+rewards $R_t$ satisfy $E[R_t|A_t] = q^*(A_t)$. Using the chain rules on the derivative $\frac{\partial \pi_t(x)}
+{\partial H_t(a)}$, we get:
+\begin{equation}
+    \left\{\begin{aligned}
+    &\frac{\partial \pi_t(A_t)}{\partial H_t(a)} = \pi_t(A_t)(1-\pi_t(a))~~\text{for}~ A_t~=~ a\\
+    &\frac{\partial \pi_t(A_t)}{\partial H_t(a)} = -\pi_t(A_t)\pi_t(a) ~~\text{for}~ A_t ~\neq~ a
+    \end{aligned}\right.
+\end{equation}
+\begin{equation}
+    \begin{aligned}
+    E[(R_t - \overline{R_t})\frac{\partial \pi_t(A_t)}{H_t(a)}\cdot\frac{1}{\pi_t(A_t)}] = E[(R_t - \overline{R_t})
+    (1_{A_t=a}-\pi(a))]\\
+    \end{aligned}
+\end{equation}
+Thus, the final update formula could be written as:
+\begin{equation}
+    H_{t+1}(a) = H_t(a) + \alpha E[(R_t-\overline{R_t})(1_{A_t=a}-\pi_t(a))]
+\end{equation}
+Again keep in mind that $A_t$ is the random variable that is being sampled under $\pi_t$.
+Comparing formula (\ref{eq:UpdateEq}), the \textbf{expectation} of that update is exactly the formula derived using 
+gradient method.
+\subsection{Algorithm}
+\begin{tcolorbox}[colback=white, colframe=black, title=Gradient Bandit Algorithm]
+    \textbf{Initialize}, for $a = 1$ to $k$: \\
+    \hspace*{0.5cm} $H(a) \leftarrow 0$ \\
+    \hspace*{0.5cm} $\overline{R} \leftarrow 0$ \\
+    \hspace*{0.5cm} $N \leftarrow 0$ \\
+    \hspace*{0.5cm} $\alpha \leftarrow \alpha_0$ \\
+    \textbf{Loop}: \\
+    \hspace*{0.5cm} $\pi(a) = \dfrac{\exp^{(H(a))}}{\sum_x \exp^{H(x)}}$\\
+    \hspace*{0.5cm} $A \leftarrow \begin{cases} 
+    \text{draw from distribution} ~~\pi(a) & \text{with probability} 1-\epsilon \\
+    \text{random action} & \text{with probability } \epsilon 
+    \end{cases}$ \\
+    \hspace*{0.5cm} $R \leftarrow \text{bandit}(A)$ \\
+    \hspace*{0.5cm} $N \leftarrow N + 1$ \\
+    \hspace*{0.5cm} $\overline{R} \leftarrow \overline{R} + \frac{1}{N}(R - \overline{R})$ \\
+    \hspace*{0.5cm} $H(a) \leftarrow \begin{cases} H(a) + \alpha*(R-\overline{R})(1-\pi(a)), & a=A \\
+                                                   H(a) - \alpha*(R-\overline{R})\pi(a) , & a \neq A 
+                                                \end{cases} $
+\end{tcolorbox}
+
+\end{document}
