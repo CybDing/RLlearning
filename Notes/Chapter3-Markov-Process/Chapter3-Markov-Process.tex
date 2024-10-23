@@ -1,0 +1,73 @@
+\documentclass{article}
+
+\usepackage{amsmath} % For mathematical symbols and equations
+\usepackage{amssymb} % For additional mathematical symbols
+\usepackage{graphicx} % For including images
+\usepackage{hyperref} % For hyperlinks
+\usepackage{bookmark} % For correct outlines
+\usepackage[margin=2.5cm, top=1.5cm]{geometry} % Set the margin size to 1cm
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+
+\title{Chapter 3 - Markov Process}
+\author{David Ding}
+
+\begin{document}
+
+\maketitle
+
+\section{Markov Process}
+In previous sections, the idea of state, reward, and policy has already been introduced into the scope of the RL learning. Here is a quick review:
+\begin{itemize}
+    \item \textbf{State:} A state is kind of like the depiction of all the information the agent and environment carrys. The environment state is the private 
+    representation of environment like how much rewards will be given to the agent or what might be observed in the agent next observation, often denoted as $S_t^e$.
+    The agent state is the information the agent has about the environment, denoted as $S_t^a$. Generally, the state is A WAY that captures all the history including the environment
+    or its actions or its received rewards, $S_t = f(H_t)$. In Markov process, we would like to draw the equivalence between the state and the history, $S_t^a = S_t^e = S_t$.
+    \item \textbf{Reward:} Rewards are the direct feedback from the environment to the agent. When the agent did an action $A_t$ in a state $S_t$, it will receive a reward
+    $R_{t+1}$ from the environment at time $t+1$. Most of the time, we would not simply consider the immediate reward, but the \textbf{return}, which is a exponentially discounted cumulative
+    rewards updating from the time when this action is done to the end of the episode. 
+    \item \textbf{Policy:} A policy $\pi$ is a preference of choosing a certain action $A_t$ depending ONLY on the certain state $S_t$ where the agent stands.
+    There are two types of policies: deterministic policy and stochastic policy. The stochastic policy is often written as a probabilty function $\pi(s) = P(A_t|S_t=s)$
+    , while the deterministic policy is a mapping $\pi(S_t = s) = A_t$.
+\end{itemize}
+\vspace{3em}
+A \textbf{Markov process}, aka Markov chain, is a memoryless random process. It is a tuple of $<S, P>$, where $S$ is a finite set of states that satisfies the Markov property, 
+and $P_{s, s^{'}} = \mathbf{P}(S_{t+1} = s^{'}|S_t = s)$ is the probability transitioning matrix from state $s$ to state $s^{'}$. 
+\begin{itemize}
+    \item \textbf{Markov Property}
+    \item \textbf{Transition Matrix}~$P_{s, s^{'}} = \mathbf{P}(S_{t+1} = s^{'}|S_t = s)$
+\end{itemize}
+\vspace{2em}
+\textbf{Notes:} Given a Markov Process, we could easily sample some trajectories or episodes using the transition matrix. While the markov process has nothing
+    to do with the rewards(Added in \textcolor{red}{MRP}), and the agent's decision making(Policy-Added in \textcolor{red}{MDP}), thus it is just a description of the states transition ONLY.
+\section{Markov Reward Process}
+A \textbf{Markov Reward Process} is a tuple of $<S, P, R, \gamma>$, where $S$ is a finite set of states, $P$ is the transition matrix, $R$ is the reward function given
+a certain state the agent enters into, and $\gamma$ is the discount factor that is vital in calculating the long-turn \textbf{return}.
+\begin{itemize}
+    \item \textbf{Rewards~$R_s$:}Rewards here are the IMMEDIATE feedback from the environment to the agent. It takes the form of expectation, $R_s = E[R_{t+1}|S_t = s]$, and
+    the use of the subscipt of $s$ means that the reward is only dependent on the state the agent is in.
+    \item \textbf{Return:} The return $G_t$ is the total discounted rewards from time-step $t$. 
+    $$G_t = R_{t+1} + \textcolor{brown}{\gamma R_{t+2} + \gamma^2 R_{t+3} + ... } = \sum_{k=1}^{\text{End of Episode}} \gamma^k R_{t+k}$$
+    The colored part is the balanced future rewards with immediate rewards, and the discounted factor is often used to prevent inflation of the return.
+    \item \textbf{Value Function:} The value function $v(s)$ is the expected return starting from state $s$, $v(s) = E[G_t|S_t = s]$. The value function is a way to evaluate
+    the goodness of a state.
+    \item \textbf{Bellman Equation:} The Bellman equation is
+\end{itemize}
+\vspace{2em}
+\textbf{Notes:}
+\section{Markov Decision Process}
+A \textbf{Markov Decision Process} is a tuple of $<S, A, P, R, \gamma>$, where $S$ is a finite set of states, $A$ is a finite set of actions, $P$ is the transition matrix,
+$R$ is the reward function, and $\gamma$ is the discount factor.
+\begin{itemize}
+    \item \textbf{Policy and Action:} $\pi(s)$
+    \item \textbf{Transition Matrix:} $P^{\textcolor{red}{a}}_{s,s^{'}}$
+    \item \textbf{Reward Function:} $R^a_s$
+    \item \textbf{Action-Value Function:}  $Q^\pi(s,a)$
+    \item \textbf{Value Function:} $V^\pi(s)$
+    \item \textbf{Bellman \textcolor{red}{Expectation} Equation:}
+\end{itemize}
+\vspace{2em} 
+\textbf{Notes:}
+
+
+\end{document}
